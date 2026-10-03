@@ -1,0 +1,969 @@
+{
+  "name": "AI Video Generator & Multi-Platform Auto Publisher",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Generate AI Video",
+        "formDescription": "Enter one video topic. The workflow will create one vertical VEO 3 video and publish it to TikTok, Instagram, and YouTube.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Video Topic",
+              "placeholder": "e.g. How black holes work in 30 seconds",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "499aa986-33bf-4ad1-8b44-5e64e11b9055",
+      "name": "Trigger: Enter Video Topic",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        -336,
+        -32
+      ],
+      "typeVersion": 2.3,
+      "webhookId": "d4cb2282-5944-4ab4-b3b4-45afdb56ebfd"
+    },
+    {
+      "parameters": {},
+      "id": "7bdb3e6d-5d01-4422-8458-87cf887bbc23",
+      "name": "Tool: Inject Creative Perspective (Idea)",
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "position": [
+        64,
+        208
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[\n  {\n    \"Caption\": \"Diver Removes Nets Off Whale 🐋 #whalerescue #marinelife #oceanrescue #seahelpers #love #nature #instagood #explore #viral #savenature #oceanguardians #cleanoceans\",\n    \"Idea\": \"Diver carefully cuts tangled net from distressed whale in open sea\",\n    \"Environment\": \"Open ocean, sunlight beams through water, diver and whale, cinematic realism\",\n    \"Sound\": \"Primary sound description under 15 words\",\n    \"Status\": \"for production\"\n  }\n]\n"
+      },
+      "id": "2a42250f-b4d7-498e-af5d-3d02328a825b",
+      "name": "Parse AI Output (Idea, Environment, Sound)",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        288,
+        192
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "="
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "="
+        },
+        "columns": {
+          "value": {
+            "id": "==ROW()-1",
+            "idea": "={{ $json.output[0].Idea }}",
+            "caption": "={{ $json.output[0].Caption }}",
+            "production": "={{ $json.output[0].Status }}",
+            "sound_prompt": "={{ $json.output[0].Sound }}",
+            "environment_prompt": "={{ $json.output[0].Environment }}"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "id",
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "idea",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "idea",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "caption",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "caption",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "production",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "production",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "environment_prompt",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "environment_prompt",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sound_prompt",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "sound_prompt",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_output",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "final_output",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "89a823f6-22f3-419a-a303-e7452de4ef7b",
+      "name": "Save Idea & Metadata to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        336,
+        -32
+      ],
+      "typeVersion": 4.5
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate one original short-form video concept for the user-provided topic.\n\n**VIDEO TOPIC:** {{ $json[\"Video Topic\"] }}\n\nCreate a visually striking, cinematic concept suitable for vertical 9:16 TikTok, Instagram Reels, and YouTube Shorts. The concept can be an explanation, story, reveal, experiment, fact, transformation, action, or other format that naturally fits the topic. Do not force a BEFORE/AFTER structure unless it genuinely suits the topic. Avoid humans, brands, and clichés when they are not needed.\n\nReturn the requested fields exactly and keep the content directly relevant to the provided topic.\n\nUse the Think tool to review your output\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=**Role:**  \nYou are an AI designed to generate one original short-form video concept for the exact user-provided topic and optimize it for VEO 3 and vertical social media.\n\n### RULES\n\n1. **Number of ideas**\n   - Return only one idea.\n\n2. **Topic**\n   - The user's topic is provided as: `{{ $json[\"Video Topic\"] }}`.\n   - The idea must be directly about this topic; do not drift into an unrelated subject.\n\n3. **Idea**\n   - Maximum 15 words.\n   - Describe the core visual story, action, explanation, reveal, or transformation in a cinematic way.\n\n4. **Caption**\n   - Short, punchy, viral-friendly.\n   - Include one emoji.\n   - Exactly 12 hashtags in this order: 4 topic-relevant hashtags, 4 all-time most popular hashtags, and 4 currently trending hashtags (based on live research). All hashtags must be lowercase.\n\n5. **Environment**\n   - Maximum 20 words.\n   - Match the Idea exactly.\n   - Specify setting, key visual details, lighting/textures, and cinematic style when useful.\n\n6. **Sound**\n   - Maximum 15 words.\n   - Describe the primary sound design or audio mood.\n\n7. **Status**\n   - Always set to `for production`.\n\n### OUTPUT FORMAT\nReturn a single-line JSON array with exactly these keys: `Caption`, `Idea`, `Environment`, `Sound`, `Status`.\n"
+        }
+      },
+      "id": "ca0e0888-c6fa-4f62-a2eb-26c9b0dc90f4",
+      "name": "Generate Creative Video Idea",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        -32,
+        -32
+      ],
+      "typeVersion": 1.9
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "c7926017-a3d2-45b8-9cb0-35c3a41ccdad",
+      "name": "LLM: Generate Raw Idea (GPT-5)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        -208,
+        208
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "id": "96ca49dd-973b-4925-aa28-379a12cd1bb3",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        656,
+        208
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {},
+      "id": "1d17f9cb-5b8b-4b22-91eb-bcc232e5ec08",
+      "name": "Think",
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "position": [
+        880,
+        224
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title\": \"string\",\n  \"final_prompt\": \"string\"\n}\n"
+      },
+      "id": "37754c90-7301-4bce-9d51-da445c99cd44",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        1056,
+        208
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cc2e0500-57b1-4615-82cb-1c950e5f2ec4",
+              "name": "json_master",
+              "type": "string",
+              "value": "={\n  \"description\": \"Brief narrative description of the scene, focusing on key visual storytelling and the requested topic.\",\n  \"style\": \"cinematic | photorealistic | stylized | gritty | elegant\",\n  \"camera\": {\n    \"type\": \"fixed | dolly | Steadicam | crane combo\",\n    \"movement\": \"describe any camera moves like slow push-in, pan, orbit\",\n    \"lens\": \"optional lens type or focal length for cinematic effect\"\n  },\n  \"lighting\": {\n    \"type\": \"natural | dramatic | high-contrast\",\n    \"sources\": \"key lighting sources (sunset, halogen, ambient glow...)\",\n    \"FX\": \"optional VFX elements like fog, reflections, flares\"\n  },\n  \"environment\": {\n    \"location\": \"describe location or room (kitchen, desert, basketball court...)\",\n    \"set_pieces\": [\n      \"list of key background or prop elements\",\n      \"e.g. hardwood floors, chain-link fence, velvet surface\"\n    ],\n    \"mood\": \"describe the ambient atmosphere (moody, clean, epic...)\"\n  },\n  \"elements\": [\n    \"main physical items involved (product box, accessories, vehicles...)\",\n    \"include brand visibility (logos, packaging, texture...)\"\n  ],\n  \"subject\": {\n    \"character\": {\n      \"description\": \"optional – physical description, outfit\",\n      \"pose\": \"optional – position or gesture\",\n      \"lip_sync_line\": \"optional – spoken line if there’s a voiceover\"\n    },\n    \"product\": {\n      \"brand\": \"Brand name\",\n      \"model\": \"Product model or name\",\n      \"action\": \"description of the relevant action, behavior, explanation, reveal, transformation, or sequence\"\n    }\n  },\n  \"motion\": {\n    \"type\": \"e.g. transformation, reveal, sequence, timelapse, action, experiment\",\n    \"details\": \"step-by-step visual flow of how elements move or evolve\"\n  },\n  \"VFX\": {\n    \"transformation\": \"optional – describe style (neon trails, motion blur...)\",\n    \"impact\": \"optional – e.g. shockwave, glow, distortion\",\n    \"particles\": \"optional – embers, sparks, thread strands...\",\n    \"environment\": \"optional – VFX affecting the scene (ripples, wind...)\"\n  },\n  \"audio\": {\n    \"music\": \"optional – cinematic score, trap beat, ambient tone\",\n    \"sfx\": [\n      \"list of sound effects (zip, pop, woosh...)\"\n    ],\n    \"ambience\": \"optional – background soundscape (traffic, wind...)\",\n    \"voiceover\": {\n      \"delivery\": \"tone and style (confident, whisper, deep...)\",\n      \"line\": \"text spoken if applicable\"\n    }\n  },\n  \"ending\": \"Final shot description – what is seen or felt at the end (freeze frame, logo pulse, glow...)\",\n  \"text\": \"none | overlay | tagline | logo pulse at end only\",\n  \"format\": \"16:9 | 4k | vertical\",\n  \"keywords\": [\n    \"brand\",\n    \"scene style\",\n    \"motion type\",\n    \"camera style\",\n    \"sound mood\",\n    \"target theme\"\n  ]\n}\n"
+            },
+            {
+              "id": "3c6ea609-e426-46d3-8617-2e289a833a64",
+              "name": "model",
+              "type": "string",
+              "value": "veo3_fast"
+            },
+            {
+              "id": "f15acf81-840c-4e09-9ff3-1647b634875f",
+              "name": "aspectRatio",
+              "type": "string",
+              "value": "9:16"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9a87c332-0b46-4f3c-b48c-fcac1347f666",
+      "name": "Set Master Prompt",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        560,
+        -32
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a polished short-form video prompt using the provided idea.\n\n**Inputs**\n\n- idea : {{ $('Save Idea & Metadata to Google Sheets').item.json.idea }}\n- environment : {{ $('Save Idea & Metadata to Google Sheets').item.json.environment_prompt }}\n- sound : {{ $('Save Idea & Metadata to Google Sheets').item.json.sound_prompt }}\n\n**Rules**\n- The video must be cinematic, visually striking, and optimized for vertical 9:16 short-form social content.\n- The prompt must stay faithful to the user's topic and the generated idea.\n- Explicitly include a strong opening/hook, the main visual action/story, CAMERA movement, LIGHTING, COLOR PALETTE, STYLE, SOUND, MOOD, and an ending shot.\n- A BEFORE/AFTER transition may be used only when it naturally fits the topic.\n- Default model: `veo3_fast` (unless otherwise specified).\n- Output only one JSON object with the keys: `title` and `final_prompt`.\n- Use the Think tool to review your output\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=\"system_prompt:\n  ## SYSTEM PROMPT: Topic-Driven Short Video Prompt Generator\n  A - Ask:\n    Generate one structured cinematic short-form video prompt for VEO 3 based strictly on the provided idea, environment, sound, and the user's topic.\n    The final result must be a JSON object with exactly two top-level keys: `title` and `final_prompt`.\n\n  G - Guidance:\n    role: Creative Director\n    output_count: 1\n    character_limit: None\n    constraints:\n      - The output must be valid JSON.\n      - The `title` field should contain a short, descriptive and unique title (max 15 words).\n      - The `final_prompt` field must contain a single-line JSON string following the exact full structure of {{ $json.json_master }} with all fields preserved.\n      - The `final_prompt` must clearly describe the opening/hook, main visual story or action, CAMERA, LIGHTING, PALETTE, STYLE, SOUND, MOOD, motion, and ending.\n      - Do not force a before/after transformation unless it fits the topic.\n      - Do not include explanations, markdown, or extra text — only the JSON object.\n      - Escape all inner quotes in the `final_prompt` string so it remains valid JSON.\n    tool_usage:\n      - Ensure consistent alignment across all fields (camera, lighting, motion, palette, audio, ending, etc.).\n      - Maintain the full structure even when optional fields are not needed (use `none`, ``, or [] as appropriate).\n\n  N - Notation:\n    format: JSON\n    expected_output:\n      {\n        \"title\": \"A unique short title for the video\",\n        \"final_prompt\": \"{...stringified JSON of the full prompt...}\"\n      }\n\""
+        }
+      },
+      "id": "ce977980-0163-468c-bf71-b38daf1de094",
+      "name": "AI Agent: Generate Video Script",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        784,
+        -32
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/veo/generate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"prompt\": {{ $json.prompt }},\n  \"model\": \"{{ $('Set Master Prompt').item.json.model }}\",\n  \"aspectRatio\": \"{{ $('Set Master Prompt').item.json.aspectRatio }}\"\n}",
+        "options": {}
+      },
+      "id": "112e1055-e972-44d9-bc1e-f33c18f1cf52",
+      "name": "Generate Video with VEO3",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -96,
+        400
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "efeIhNxZ6F0e0myL",
+          "name": "Header Auth account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "minutes"
+      },
+      "id": "b899691c-ac47-42f9-80e8-bbb64a3b653c",
+      "name": "Wait for VEO3 Rendering",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        192,
+        400
+      ],
+      "webhookId": "f8f1a8a7-0870-4f09-b732-425a8937f229",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "url": "https://api.kie.ai/api/v1/veo/record-info",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "taskId",
+              "value": "={{ $('Generate Video with VEO3').item.json.data.taskId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bb52e036-44bd-46be-a782-46419935ef3e",
+      "name": "Download Video from VEO3",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        416,
+        400
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const structuredPrompt = $input.first().json.output.final_prompt;\nreturn {\n  json: {\n    prompt: JSON.stringify(structuredPrompt), // this escapes it correctly!\n    model: \"veo3_fast\",\n    aspectRatio: \"9:16\"\n  }\n};\n"
+      },
+      "id": "83354121-8711-44d6-b913-dfb1ea339695",
+      "name": "Format Prompt",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -288,
+        400
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "="
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "="
+        },
+        "columns": {
+          "value": {
+            "idea": "={{ $('Save Idea & Metadata to Google Sheets').item.json.idea }}",
+            "production": "done",
+            "final_output": "={{ $json.data.response.resultUrls[0] }}"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "id",
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "idea",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "idea",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "caption",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "caption",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "production",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "production",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "environment_prompt",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "environment_prompt",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sound_prompt",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "sound_prompt",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_output",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "final_output",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "type": "number",
+              "display": true,
+              "removed": true,
+              "readOnly": true,
+              "required": false,
+              "displayName": "row_number",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "idea"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "63242ff2-7116-479a-9107-d1caa15b1b58",
+      "name": "URL Final Video",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        672,
+        400
+      ],
+      "typeVersion": 4.5
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "mediaUrl": "={{ $('URL Final Video').item.json.final_output }}"
+      },
+      "id": "30959d39-eea6-44ff-b002-5fb0e40485ec",
+      "name": "Upload Video to BLOTATO",
+      "type": "@blotato/n8n-nodes-blotato.blotato",
+      "position": [
+        -48,
+        672
+      ],
+      "typeVersion": 2,
+      "credentials": {
+        "blotatoApi": {
+          "id": "Qy9jmUKrEHyfB4Qd",
+          "name": "Blotato account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "="
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "="
+        },
+        "columns": {
+          "value": {
+            "idea": "={{ $('Save Idea & Metadata to Google Sheets').first().json.idea }}",
+            "production": "Publish"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "id",
+              "defaultMatch": true,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "idea",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "idea",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "caption",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "caption",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "production",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "production",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "environment_prompt",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "environment_prompt",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sound_prompt",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "sound_prompt",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_output",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "final_output",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "idea"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "b1253c6d-3732-43d2-92a9-ff6ede28eb48",
+      "name": "Update Status to \"DONE\"",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        912,
+        672
+      ],
+      "typeVersion": 4.5
+    },
+    {
+      "parameters": {
+        "platform": "tiktok",
+        "accountId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "="
+        },
+        "postContentText": "={{ $('Save Idea & Metadata to Google Sheets').first().json.caption }}",
+        "postContentMediaUrls": "={{ $json.url }}",
+        "postCreateTiktokOptionIsAiGenerated": true,
+        "options": {}
+      },
+      "id": "7d44ca1a-c238-4a86-aece-96c348bc1a92",
+      "name": "TikTok",
+      "type": "@blotato/n8n-nodes-blotato.blotato",
+      "position": [
+        256,
+        672
+      ],
+      "typeVersion": 2,
+      "credentials": {
+        "blotatoApi": {
+          "id": "Qy9jmUKrEHyfB4Qd",
+          "name": "Blotato account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $('URL Final Video').item.json.final_output }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "749db232-9bee-43b9-97b3-588c9ddc982d",
+      "name": "Download Final Video for YouTube",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        976,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Save Idea & Metadata to Google Sheets').item.json.idea }}",
+        "regionCode": "US",
+        "categoryId": "22",
+        "options": {
+          "description": "={{ $('Save Idea & Metadata to Google Sheets').item.json.caption }}",
+          "embeddable": true,
+          "notifySubscribers": false,
+          "privacyStatus": "public",
+          "publicStatsViewable": true,
+          "selfDeclaredMadeForKids": false
+        }
+      },
+      "id": "6e692ae2-c17f-47ea-b9b6-b735405f1444",
+      "name": "YouTube (Direct Upload)",
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        672
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "jnWoR7LMgqGxSEys",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "accountId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "postContentText": "={{ $('Save Idea & Metadata to Google Sheets').item.json.caption }}",
+        "postContentMediaUrls": "={{ $json.url }}",
+        "options": {}
+      },
+      "id": "d062bbf1-d276-4cce-aafc-b2a88a769d3a",
+      "name": "Instagram",
+      "type": "@blotato/n8n-nodes-blotato.blotato",
+      "typeVersion": 2,
+      "position": [
+        560,
+        672
+      ],
+      "credentials": {
+        "blotatoApi": {
+          "id": "Qy9jmUKrEHyfB4Qd",
+          "name": "Blotato account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent: Generate Video Script",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok": {
+      "main": [
+        [
+          {
+            "node": "Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate Video with VEO3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "URL Final Video": {
+      "main": [
+        [
+          {
+            "node": "Download Final Video for YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent: Generate Video Script",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Master Prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Generate Video Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Video to BLOTATO": {
+      "main": [
+        [
+          {
+            "node": "TikTok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for VEO3 Rendering": {
+      "main": [
+        [
+          {
+            "node": "Download Video from VEO3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Video from VEO3": {
+      "main": [
+        [
+          {
+            "node": "URL Final Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Video with VEO3": {
+      "main": [
+        [
+          {
+            "node": "Wait for VEO3 Rendering",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent: Generate Video Script",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Creative Video Idea": {
+      "main": [
+        [
+          {
+            "node": "Save Idea & Metadata to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM: Generate Raw Idea (GPT-5)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Creative Video Idea",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: Generate Video Script": {
+      "main": [
+        [
+          {
+            "node": "Format Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Idea & Metadata to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Set Master Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: Inject Creative Perspective (Idea)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate Creative Video Idea",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Output (Idea, Environment, Sound)": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Creative Video Idea",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger: Enter Video Topic": {
+      "main": [
+        [
+          {
+            "node": "Generate Creative Video Idea",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Final Video for YouTube": {
+      "main": [
+        [
+          {
+            "node": "YouTube (Direct Upload)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube (Direct Upload)": {
+      "main": [
+        [
+          {
+            "node": "Upload Video to BLOTATO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram": {
+      "main": [
+        [
+          {
+            "node": "Update Status to \"DONE\"",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a20623f0-995f-4609-ab25-a2f14d318d22",
+  "meta": {
+    "instanceId": "97039511d7868ab0b903b5b74dcd4abfc433b51b62d833c08dd157497493ed2a"
+  },
+  "nodeGroups": [],
+  "id": "fgLnrjkZzSTnzxjJ",
+  "tags": []
+}
