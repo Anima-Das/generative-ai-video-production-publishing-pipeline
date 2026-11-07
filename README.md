@@ -404,18 +404,7 @@ This is the example shown in the form's placeholder text, not a recorded product
 - Use least-privilege access for connected accounts where possible.
 - Review the public YouTube privacy setting before activating the workflow.
 
----
 
-## ⚠️ Limitations & Deployment Notes
-
-- The workflow is exported as **inactive** (`active: false`) and must be activated after configuration.
-- External credentials are required for OpenAI, the Kie AI endpoint, Google Sheets, Blotato and YouTube.
-- Google Sheets IDs and social account identifiers need configuration.
-- Generated video quality depends on the VEO 3 generation service.
-- Social publishing depends on the availability of Blotato and YouTube.
-- Prompt and caption output depends on model behavior.
-- The 3-minute wait is a fixed delay, not a guarantee that rendering has completed.
-- This README documents the workflow design. It contains no measured production results.
 
 ---
 
